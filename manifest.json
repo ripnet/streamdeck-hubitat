@@ -1,0 +1,44 @@
+{
+  "Actions": [
+    {
+      "Icon": "resources/img/toggle",
+      "Name": "Toggle Switch",
+      "States": [
+        {
+          "Image": "resources/img/light_gray",
+          "TitleAlignment": "bottom",
+          "FontSize": "12",
+          "Title": "Switch"
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "Tooltip": "This action toggles a switch",
+      "UUID": "com.ripnet.hubitat.toggleswitch.action"
+    }
+  ],
+  "SDKVersion": 2,
+  "Author": "ripnet",
+  "CodePath": "plugin/index.html",
+  "Description": "This lets you display a value chosen by the user",
+  "Name": "Hubitat Integration",
+  "Icon": "resources/img/hubitat_logo",
+  "URL": "https://github.com/ripnet/streamdeck-hubitat",
+  "PropertyInspectorPath": "pi/hubitat_pi.html",
+  "Version": "1.0",
+  "Category": "Hubitat",
+  "CategoryIcon": "resources/img/category",
+  "OS": [
+    {
+      "Platform": "mac",
+      "MinimumVersion": "10.11"
+    },
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "Software":
+  {
+    "MinimumVersion" : "4.1"
+  }
+}

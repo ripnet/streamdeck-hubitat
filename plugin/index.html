@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>com.ripnet.hubitat</title>
+    <meta charset="utf-8">
+</head>
+<body>
+<script src="../resources/js/jquery-3.5.1.min.js"></script>
+<script>
+    let sdWebsocket = null;
+    let hubitatWebsocket = null;
+    let pluginUUID = null;
+    let instances = {};
+    let globalSettings = {};
+
+    const hubitat = {
+        start: function() {
+            hubitatWebsocket = new WebSocket("ws://" + globalSettings.hostname + "/eventsocket");
+
+            hubitatWebsocket.onopen = function() { }
+
+            hubitatWebsocket.onmessage = function(evt) {
+                const data = JSON.parse(evt.data);
+                if (data.name === "switch") {
+                    const id = data.deviceId;
+                    const value = data.value;
+                    for (const [key, instance] of Object.entries(instances)) {
+                        if (instances[key].settings.device == id) {
+                            instances[key].state = value;
+                            updateState(key);
+                        }
+
+                    }
+                }
+
+            }
+            hubitatWebsocket.onclose = function() {
+                setTimeout(() => this.start(), 1000);
+            }
+        },
+        pollState: function(context) {
+            if (
+                globalSettings.hasOwnProperty('hostname') &&
+                globalSettings.hasOwnProperty('access_token')
+            ) {
+                const id = instances[context].settings.device;
+                $.get("http://" + globalSettings.hostname + "/apps/api/229/devices/" + id + "?access_token=" + globalSettings.access_token, function (data) {
+                    data.attributes.forEach(function (a) {
+                        if (a.name === "switch") {
+
+                            instances[context].state = a.currentValue;
+                            updateState(context);
+                        }
+                    });
+                }).fail(function() {
+                    instances[context].state = 'unknown'
+                    updateState(context);
+                });
+            }
+        },
+        setState: function(context, state) {
+            if (
+                globalSettings.hasOwnProperty('hostname') &&
+                globalSettings.hasOwnProperty('access_token')
+            ) {
+                const id = instances[context].settings.device;
+                $.get("http://" + globalSettings.hostname + "/apps/api/229/devices/" + id + "/" + state + "?access_token=" + globalSettings.access_token, function (data) {
+                    instances[context].state = state;
+                    updateState(context);
+                });
+            }
+        }
+    }
+
+    function updateState(instance) {
+        const state = instances[instance].state;
+        switch (state) {
+            case "on":
+                setImage(instance, 'light_green');
+                break;
+            case "off":
+                setImage(instance, 'light_red');
+                break;
+            default:
+                setImage(instance, 'light_gray');
+        }
+    }
+
+    function globalSettingsUpdated() {
+        if (globalSettings.hasOwnProperty('hostname') && globalSettings.hasOwnProperty('access_token')) {
+            hubitat.start();
+        }
+        if (
+            globalSettings.hasOwnProperty('hostname') &&
+            globalSettings.hasOwnProperty('access_token')
+        ) {
+            for (const [key, instance] of Object.entries(instances)) {
+                hubitat.pollState(key);
+
+            }
+        }
+    }
+
+    function setImage(context, file) {
+        let image = new Image();
+
+        image.onload = function() {
+            let canvas = document.createElement("canvas");
+            canvas.width = this.naturalWidth;
+            canvas.height = this.naturalHeight;
+            let ctx = canvas.getContext('2d');
+            ctx.drawImage(this, 0, 0);
+            var json = {
+                "event": "setImage",
+                "context": context,
+                "payload": {
+                    image: canvas.toDataURL("image/png"),
+                    target: DestinationEnum.HARDWARE_AND_SOFTWARE
+                }
+            };
+            sdWebsocket.send(JSON.stringify(json));
+        }
+
+        image.src = '../resources/img/' + file + ".png";
+
+    }
+
+    function appear(context, settings) {
+        instances[context] = {settings: settings, state: 'unknown'};
+        if (settings.device) {
+            hubitat.pollState(context);
+        } else {
+            updateState(context);
+        }
+    }
+
+    const DestinationEnum = Object.freeze({ "HARDWARE_AND_SOFTWARE": 0, "HARDWARE_ONLY": 1, "SOFTWARE_ONLY": 2 })
+
+    function buttonPress(context, settings) {
+        instances[context].settings = settings;
+        const current = instances[context].state;
+        if (current === 'on') {
+            hubitat.setState(context, 'off');
+        } else if (current === 'off') {
+            hubitat.setState(context, 'on');
+        }
+    }
+
+    function connectElgatoStreamDeckSocket(inPort, inPluginUUID, inRegisterEvent, inInfo) {
+        pluginUUID = inPluginUUID;
+
+        sdWebsocket = new WebSocket("ws://127.0.0.1:" + inPort);
+
+        function registerPlugin(inPluginUUID) {
+            let json = {
+                "event": inRegisterEvent,
+                "uuid": inPluginUUID,
+            };
+
+            sdWebsocket.send(JSON.stringify(json));
+            getGlobalSettings();
+            getSettings();
+        }
+
+        sdWebsocket.onopen = function() {
+            registerPlugin(pluginUUID);
+        }
+
+        sdWebsocket.onmessage = function (evt) {
+            let data = JSON.parse(evt.data);
+            let event = data.event;
+            let context = data['context'];
+            let payload = data.payload;
+
+            let settings = null;
+
+            switch (event) {
+                case "keyUp":
+                    settings = payload.settings;
+                    buttonPress(context, settings);
+                    break;
+                case "willAppear":
+                    settings = payload.settings;
+                    appear(context, settings);
+                    break;
+                case "didReceiveGlobalSettings":
+                    globalSettings = payload.settings;
+                    globalSettingsUpdated();
+                    break;
+                case "didReceiveSettings":
+                    instances[context].settings = payload.settings;
+                    hubitat.pollState(context);
+                    break;
+
+            }
+        };
+
+        sdWebsocket.onclose = function() {}
+    }
+
+    function getGlobalSettings() {
+        let json = {
+            "event": 'getGlobalSettings',
+            "context": pluginUUID
+        };
+        sdWebsocket.send(JSON.stringify(json));
+    }
+
+    function getSettings() {
+        let json = {
+            "event": 'getSettings',
+            "context": pluginUUID
+        };
+        sdWebsocket.send(JSON.stringify(json));
+    }
+</script>
+</body>
+</html>

@@ -14,6 +14,21 @@
       "SupportedInMultiActions": false,
       "Tooltip": "This action toggles a switch",
       "UUID": "com.ripnet.hubitat.toggleswitch.action"
+    },
+    {
+      "Icon": "resources/img/toggle",
+      "Name": "Set Switch",
+      "States": [
+        {
+          "Image": "resources/img/light_gray",
+          "TitleAlignment": "bottom",
+          "FontSize": "12",
+          "Title": "Switch"
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "Tooltip": "This action sets the state of a switch",
+      "UUID": "com.ripnet.hubitat.setswitch.action"
     }
   ],
   "SDKVersion": 2,
@@ -24,7 +39,7 @@
   "Icon": "resources/img/hubitat_logo",
   "URL": "https://github.com/ripnet/streamdeck-hubitat",
   "PropertyInspectorPath": "pi/hubitat_pi.html",
-  "Version": "1.1",
+  "Version": "1.2",
   "Category": "Hubitat",
   "CategoryIcon": "resources/img/category",
   "OS": [

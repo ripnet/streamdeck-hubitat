@@ -28,11 +28,29 @@
 
 </div>
 <script src="../resources/js/jquery-3.5.1.min.js"></script>
+<script src="../resources/js/streamdeck.js"></script>
 <script>
     let globalSettings = {};
     let localSettings = {};
 
     let devices = [];
+
+    waitForSD();
+    function waitForSD() {
+        // Wait until streamdeck has connected
+        if ($sd.ready)
+            start();
+        else
+            setTimeout(waitForSD, 100);
+    }
+
+    function start() {
+        // StreamDeck connected, subscribe to events
+        $sd.subscribe('didReceiveGlobalSettings', receivedGlobalSettings);
+        $sd.subscribe('didReceiveSettings', receivedSettings);
+        $sd.sendEvents(); // ready!
+    }
+
 
     $(function() {
         $('.global').change(function() {
@@ -56,16 +74,20 @@
 
     });
 
-    function globalSettingsUpdated() {
+    function receivedGlobalSettings(data) {
+        globalSettings = data.payload['settings'] || {};
+
         for (const [key, value] of Object.entries(globalSettings)) {
             $('#' + key).val(value);
         }
         getDevices();
     }
 
-    function localSettingsUpdated() {
-        populateDevices();
+    function receivedSettings(data) {
+        localSettings = data.payload.settings || {};
     }
+
+
     function getDevices() {
         $.get("http://" + globalSettings.hostname + "/apps/api/229/devices/all?access_token=" + globalSettings.access_token, function(data) {
             devices = [];
@@ -91,101 +113,20 @@
         }
     }
 
-    function connectElgatoStreamDeckSocket(inPort, inPluginUUID, inRegisterEvent, inInfo) {
-        pluginUUID = inPluginUUID;
-
-        sdWebsocket = new WebSocket("ws://127.0.0.1:" + inPort);
-
-        function registerPlugin(inPluginUUID) {
-            let json = {
-                "event": inRegisterEvent,
-                "uuid": inPluginUUID,
-            };
-
-            sdWebsocket.send(JSON.stringify(json));
-            getGlobalSettings();
-            getSettings();
-        }
-
-        sdWebsocket.onopen = function () {
-            registerPlugin(pluginUUID);
-
-        }
-
-        sdWebsocket.onmessage = function (evt) {
-            let data = JSON.parse(evt.data);
-            switch (data.event) {
-                case "didReceiveGlobalSettings":
-                    globalSettings = data.payload['settings'];
-                    globalSettingsUpdated();
-                    break;
-                case "didReceiveSettings":
-                    localSettings = data.payload['settings'];
-                    localSettingsUpdated();
-                    break;
-            }
-        }
-    }
-
-    function getGlobalSettings() {
-        let json = {
-            "event": 'getGlobalSettings',
-            "context": pluginUUID
-        };
-        sdWebsocket.send(JSON.stringify(json));
+    function setGlobalSettings(settings) {
+        $sd.getGlobalSettings(settings);
+        $sd.getGlobalSettings();
     }
 
     function getSettings() {
-        let json = {
-            "event": 'getSettings',
-            "context": pluginUUID
-        };
-        sdWebsocket.send(JSON.stringify(json));
-    }
-
-    function updatePlugin() {
-        let json = {
-            "action": "com.ripnet.hubitat.update",
-            "event": "sendToPlugin",
-            "context": pluginUUID,
-            "payload": {}
-        };
-        //sdWebsocket.send(JSON.stringify(json));
-    }
-
-    function setGlobalSettings(settings) {
-        let json = {
-            "event": "setGlobalSettings",
-            "context": pluginUUID,
-            "payload": settings
-        };
-        sdWebsocket.send(JSON.stringify(json));
-        updatePlugin();
-        getGlobalSettings();
+        $sd.getSettings();
     }
 
     function setSettings(settings) {
-        let json = {
-            "event": "setSettings",
-            "context": pluginUUID,
-            "payload": settings
-        };
-        sdWebsocket.send(JSON.stringify(json));
-        updatePlugin();
+        $sd.setSettings(settings);
         getSettings();
     }
 
-    function setTitle(title) {
-        let json = {
-            "event": "setTitle",
-            "context": pluginUUID,
-            "payload": {
-                "title": title,
-                "target": 0
-            }
-        }
-        console.log(json);
-    }
 
 
 </script>

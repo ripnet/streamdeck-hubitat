@@ -6,12 +6,34 @@
 </head>
 <body>
 <script src="../resources/js/jquery-3.5.1.min.js"></script>
+<script src="../resources/js/streamdeck.js"></script>
 <script>
-    let sdWebsocket = null;
     let hubitatWebsocket = null;
-    let pluginUUID = null;
     let instances = {};
     let globalSettings = {};
+
+    waitForSD();
+    function waitForSD() {
+        // Wait until streamdeck has connected
+        if ($sd.ready)
+            start();
+        else
+            setTimeout(waitForSD, 100);
+    }
+
+    function start() {
+        // StreamDeck connected, subscribe to events
+        $sd.subscribe('keyUp', buttonPress);
+        $sd.subscribe('willAppear', appear);
+        $sd.subscribe('didReceiveGlobalSettings', receivedGlobalSettings);
+        $sd.subscribe('didReceiveSettings', receivedSettings);
+        $sd.sendEvents(); // ready!
+    }
+
+
+
+
+
 
     const hubitat = {
         start: function() {
@@ -76,18 +98,29 @@
         const state = instances[instance].state;
         switch (state) {
             case "on":
-                setImage(instance, 'light_green');
+                $sd.setImageFile(instance, 'light_green');
                 break;
             case "off":
-                setImage(instance, 'light_red');
+                $sd.setImageFile(instance, 'light_red');
                 break;
             default:
-                setImage(instance, 'light_gray');
+                $sd.setImageFile(instance, 'light_gray');
         }
+    }
+
+    function receivedSettings(data) {
+        instances[data.context].settings = data.payload.settings;
+        hubitat.pollState(data.context);
+    }
+
+    function receivedGlobalSettings(data) {
+        globalSettings = data.payload.settings;
+        globalSettingsUpdated();
     }
 
     function globalSettingsUpdated() {
         if (globalSettings.hasOwnProperty('hostname') && globalSettings.hasOwnProperty('access_token')) {
+
             hubitat.start();
         }
         if (
@@ -101,118 +134,27 @@
         }
     }
 
-    function setImage(context, file) {
-        let image = new Image();
-
-        image.onload = function() {
-            let canvas = document.createElement("canvas");
-            canvas.width = this.naturalWidth;
-            canvas.height = this.naturalHeight;
-            let ctx = canvas.getContext('2d');
-            ctx.drawImage(this, 0, 0);
-            var json = {
-                "event": "setImage",
-                "context": context,
-                "payload": {
-                    image: canvas.toDataURL("image/png"),
-                    target: DestinationEnum.HARDWARE_AND_SOFTWARE
-                }
-            };
-            sdWebsocket.send(JSON.stringify(json));
-        }
-
-        image.src = '../resources/img/' + file + ".png";
-
-    }
-
-    function appear(context, settings) {
-        instances[context] = {settings: settings, state: 'unknown'};
-        if (settings.device) {
-            hubitat.pollState(context);
+   function appear(data) {
+        let settings = data.payload.settings || {};
+        instances[data.context] = {settings: settings, state: 'unknown'};
+        if (data.payload.settings.device) {
+            hubitat.pollState(data.context);
         } else {
-            updateState(context);
+            updateState(data.context);
         }
     }
 
-    const DestinationEnum = Object.freeze({ "HARDWARE_AND_SOFTWARE": 0, "HARDWARE_ONLY": 1, "SOFTWARE_ONLY": 2 })
-
-    function buttonPress(context, settings) {
-        instances[context].settings = settings;
-        const current = instances[context].state;
+    function buttonPress(data) {
+        instances[data.context].settings = data.payload.settings;
+        const current = instances[data.context].state;
         if (current === 'on') {
-            hubitat.setState(context, 'off');
+            hubitat.setState(data.context, 'off');
         } else if (current === 'off') {
-            hubitat.setState(context, 'on');
+            hubitat.setState(data.context, 'on');
         }
     }
 
-    function connectElgatoStreamDeckSocket(inPort, inPluginUUID, inRegisterEvent, inInfo) {
-        pluginUUID = inPluginUUID;
 
-        sdWebsocket = new WebSocket("ws://127.0.0.1:" + inPort);
-
-        function registerPlugin(inPluginUUID) {
-            let json = {
-                "event": inRegisterEvent,
-                "uuid": inPluginUUID,
-            };
-
-            sdWebsocket.send(JSON.stringify(json));
-            getGlobalSettings();
-            getSettings();
-        }
-
-        sdWebsocket.onopen = function() {
-            registerPlugin(pluginUUID);
-        }
-
-        sdWebsocket.onmessage = function (evt) {
-            let data = JSON.parse(evt.data);
-            let event = data.event;
-            let context = data['context'];
-            let payload = data.payload;
-
-            let settings = null;
-
-            switch (event) {
-                case "keyUp":
-                    settings = payload.settings;
-                    buttonPress(context, settings);
-                    break;
-                case "willAppear":
-                    settings = payload.settings;
-                    appear(context, settings);
-                    break;
-                case "didReceiveGlobalSettings":
-                    globalSettings = payload.settings;
-                    globalSettingsUpdated();
-                    break;
-                case "didReceiveSettings":
-                    instances[context].settings = payload.settings;
-                    hubitat.pollState(context);
-                    break;
-
-            }
-        };
-
-        sdWebsocket.onclose = function() {}
-    }
-
-    function getGlobalSettings() {
-        let json = {
-            "event": 'getGlobalSettings',
-            "context": pluginUUID
-        };
-        sdWebsocket.send(JSON.stringify(json));
-    }
-
-    function getSettings() {
-        let json = {
-            "event": 'getSettings',
-            "context": pluginUUID
-        };
-        sdWebsocket.send(JSON.stringify(json));
-    }
 </script>
 </body>
 </html>

@@ -34,7 +34,7 @@ function sleep(ms) {
 
 class StreamDeck extends Emitter {
 
-    constructor(inPort, inPluginUUID, inRegisterEvent, inInfo) {
+    constructor(inPort, inPluginUUID, inRegisterEvent, inInfo, inActionInfo = null) {
         super();
 
         this.inPort = inPort;
@@ -42,6 +42,11 @@ class StreamDeck extends Emitter {
         this.inInfo = inInfo;
         this.inRegisterEvent = inRegisterEvent;
         this.clientReady = false;
+        this.actionInfo = null;
+
+        if (inActionInfo) {
+            this.actionInfo = JSON.parse(inActionInfo);
+        }
 
         this.ws = new WebSocket('ws://127.0.0.1:' + this.inPort)
 
@@ -123,8 +128,8 @@ class StreamDeck extends Emitter {
     ready = false;
 }
 let $sd = {ready: false};
-function connectElgatoStreamDeckSocket(inPort, inPluginUUID, inRegisterEvent, inInfo) {
-    $sd = new StreamDeck(inPort, inPluginUUID, inRegisterEvent, inInfo);
+function connectElgatoStreamDeckSocket(inPort, inPluginUUID, inRegisterEvent, inInfo, inActionInfo = null) {
+    $sd = new StreamDeck(inPort, inPluginUUID, inRegisterEvent, inInfo, inActionInfo);
 }
 
 

@@ -136,7 +136,7 @@
 
    function appear(data) {
         let settings = data.payload.settings || {};
-        instances[data.context] = {settings: settings, state: 'unknown'};
+        instances[data.context] = {action: data.action, settings: settings, state: 'unknown'};
         if (data.payload.settings.device) {
             hubitat.pollState(data.context);
         } else {
@@ -145,13 +145,25 @@
     }
 
     function buttonPress(data) {
-        instances[data.context].settings = data.payload.settings;
-        const current = instances[data.context].state;
-        if (current === 'on') {
-            hubitat.setState(data.context, 'off');
-        } else if (current === 'off') {
-            hubitat.setState(data.context, 'on');
+        instances[data.context]['settings'] = data.payload.settings;
+
+        switch (data.action) {
+            case 'com.ripnet.hubitat.toggleswitch.action':
+                const current = instances[data.context].state;
+                if (current === 'on') {
+                    hubitat.setState(data.context, 'off');
+                } else if (current === 'off') {
+                    hubitat.setState(data.context, 'on');
+                }
+                break;
+            case 'com.ripnet.hubitat.setswitch.action':
+                if (instances[data.context]['settings'].action) {
+                    hubitat.setState(data.context, instances[data.context].settings.action);
+                }
+                break;
         }
+
+
     }
 
 

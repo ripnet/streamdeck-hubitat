@@ -21,9 +21,22 @@
     <div class="sdpi-heading">Button Specific</div>
     <div class="sdpi-item">
         <div class="sdpi-item-label">Device</div>
-        <select class="spdi-item-value" id="device">
+        <select class="sdpi-item-value" id="device">
             <option disabled selected>set hostname</option>
         </select>
+    </div>
+    <div class="sdpi-item action-set" type="radio">
+        <div class="sdpi-item-label">Action</div>
+        <div class="sdpi-item-value">
+            <span class="sdpi-item-child">
+                <input type="radio" id="action_on" name="action" value="on">
+                <label for="action_on" class="sdpi-item-label"><span></span>on</label>
+            </span>
+            <span class="sdpi-item-child">
+                <input type="radio" id="action_off" name="action" value="off">
+                <label for="action_off" class="sdpi-item-label"><span></span>off</label>
+            </span>
+        </div>
     </div>
 
 </div>
@@ -34,6 +47,9 @@
     let localSettings = {};
 
     let devices = [];
+
+    let action = null;
+
 
     waitForSD();
     function waitForSD() {
@@ -48,7 +64,15 @@
         // StreamDeck connected, subscribe to events
         $sd.subscribe('didReceiveGlobalSettings', receivedGlobalSettings);
         $sd.subscribe('didReceiveSettings', receivedSettings);
+        action = $sd.actionInfo.action;
+        console.log(action);
+        if (action === 'com.ripnet.hubitat.setswitch.action') {
+            $('.action-set').show();
+        } else {
+            $('.action-set').hide();
+        }
         $sd.sendEvents(); // ready!
+        $sd.getSettings();
     }
 
 
@@ -64,13 +88,15 @@
         $('#device').change(function() {
             let newSettings = Object.assign({}, localSettings);
             newSettings["device"] = $(this).val();
-            // let deviceName = $('#device option:selected').text();
-            // deviceName = deviceName.replace(' Switch', '');
-            // deviceName = deviceName.replace(' Light', '');
-            // deviceName = deviceName.replace(' Fan', '');
-            // setTitle(deviceName);
             setSettings(newSettings);
         });
+
+        $('input[type="radio"][name="action"]').change(function() {
+            let newSettings = Object.assign({}, localSettings);
+            newSettings["action"] = $(this).val();
+            setSettings(newSettings);
+        });
+
 
     });
 
@@ -85,6 +111,12 @@
 
     function receivedSettings(data) {
         localSettings = data.payload.settings || {};
+        if (action === 'com.ripnet.hubitat.setswitch.action') {
+            console.log("here")
+            if (localSettings.action) {
+                $('input[type="radio"][name="action"][value="'+localSettings.action+'"]').attr('checked', true);
+            }
+        }
     }
 
 
@@ -105,6 +137,9 @@
         // load the devices from the array into the HTML select
         let d = $('#device');
         d.empty();
+        if (!localSettings.hasOwnProperty('device')) {
+            d.append($("<option />"))
+        }
         devices.forEach(function(device) {
             d.append($("<option />").val(device.id).text(device.name));
         });

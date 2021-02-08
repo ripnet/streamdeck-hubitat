@@ -65,7 +65,6 @@
         $sd.subscribe('didReceiveGlobalSettings', receivedGlobalSettings);
         $sd.subscribe('didReceiveSettings', receivedSettings);
         action = $sd.actionInfo.action;
-        console.log(action);
         if (action === 'com.ripnet.hubitat.setswitch.action') {
             $('.action-set').show();
         } else {
@@ -112,7 +111,6 @@
     function receivedSettings(data) {
         localSettings = data.payload.settings || {};
         if (action === 'com.ripnet.hubitat.setswitch.action') {
-            console.log("here")
             if (localSettings.action) {
                 $('input[type="radio"][name="action"][value="'+localSettings.action+'"]').attr('checked', true);
             }
@@ -149,7 +147,7 @@
     }
 
     function setGlobalSettings(settings) {
-        $sd.getGlobalSettings(settings);
+        $sd.setGlobalSettings(settings);
         $sd.getGlobalSettings();
     }
 

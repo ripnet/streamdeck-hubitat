@@ -10,9 +10,12 @@
 <div class="sdpi-wrapper">
     <div class="sdpi-heading">Global</div>
     <div class="sdpi-item">
-        <div class="sdpi-item-label" type="field">Hostname</div>
+        <div class="sdpi-item-label" type="field">API URL</div>
         <input type="text" class="sdpi-item-value global" id="hostname">
     </div>
+    <details>
+        <summary>Example: http://192.168.1.2/apps/api/229</summary>
+    </details>
     <div class="sdpi-item">
         <div class="sdpi-item-label" type="field">Access Token</div>
         <input type="text" class="sdpi-item-value global" id="access_token">
@@ -119,7 +122,7 @@
 
 
     function getDevices() {
-        $.get("http://" + globalSettings.hostname + "/apps/api/229/devices/all?access_token=" + globalSettings.access_token, function(data) {
+        $.get(globalSettings.hostname + "/devices/all?access_token=" + globalSettings.access_token, function(data) {
             devices = [];
             data.forEach(function(device) {
                 if (device.capabilities.includes("Switch")) {

@@ -37,7 +37,8 @@
 
     const hubitat = {
         start: function() {
-            hubitatWebsocket = new WebSocket("ws://" + globalSettings.hostname + "/eventsocket");
+            let url = new URL(globalSettings.hostname)
+            hubitatWebsocket = new WebSocket("ws://" + url.hostname + "/eventsocket");
 
             hubitatWebsocket.onopen = function() { }
 
@@ -66,7 +67,7 @@
                 globalSettings.hasOwnProperty('access_token')
             ) {
                 const id = instances[context].settings.device;
-                $.get("http://" + globalSettings.hostname + "/apps/api/229/devices/" + id + "?access_token=" + globalSettings.access_token, function (data) {
+                $.get(globalSettings.hostname + "/devices/" + id + "?access_token=" + globalSettings.access_token, function (data) {
                     data.attributes.forEach(function (a) {
                         if (a.name === "switch") {
 
@@ -86,7 +87,7 @@
                 globalSettings.hasOwnProperty('access_token')
             ) {
                 const id = instances[context].settings.device;
-                $.get("http://" + globalSettings.hostname + "/apps/api/229/devices/" + id + "/" + state + "?access_token=" + globalSettings.access_token, function (data) {
+                $.get(globalSettings.hostname + "/devices/" + id + "/" + state + "?access_token=" + globalSettings.access_token, function (data) {
                     instances[context].state = state;
                     updateState(context);
                 });

@@ -58,7 +58,7 @@
 
             }
             hubitatWebsocket.onclose = function() {
-                setTimeout(() => this.start(), 1000);
+                setTimeout(() => hubitat.start(), 2000);
             }
         },
         pollState: function(context) {

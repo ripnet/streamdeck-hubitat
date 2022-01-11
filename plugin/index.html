@@ -81,13 +81,19 @@
                 });
             }
         },
-        setState: function(context, state) {
+        setState: function(context, state, value = '') {
             if (
                 globalSettings.hasOwnProperty('hostname') &&
                 globalSettings.hasOwnProperty('access_token')
             ) {
                 const id = instances[context].settings.device;
-                $.get(globalSettings.hostname + "/devices/" + id + "/" + state + "?access_token=" + globalSettings.access_token, function (data) {
+                let stateString = "";
+                if (value.length) {
+                    stateString = state + '/' + value;
+                } else {
+                    stateString = state;
+                }
+                $.get(globalSettings.hostname + "/devices/" + id + "/" + stateString + "?access_token=" + globalSettings.access_token, function (data) {
                     instances[context].state = state;
                     updateState(context);
                 });
@@ -103,6 +109,8 @@
                 break;
             case "off":
                 $sd.setImageFile(instance, 'light_red');
+                break;
+            case "setLevel":
                 break;
             default:
                 $sd.setImageFile(instance, 'light_gray');
@@ -159,7 +167,14 @@
                 break;
             case 'com.ripnet.hubitat.setswitch.action':
                 if (instances[data.context]['settings'].action) {
-                    hubitat.setState(data.context, instances[data.context].settings.action);
+                    if (instances[data.context]['settings'].action === 'setLevel') {
+                        let level = instances[data.context]['settings'].level;
+                        if (level >= 0 && level <= 100) {
+                            hubitat.setState(data.context, instances[data.context].settings.action, level);
+                        }
+                    } else {
+                        hubitat.setState(data.context, instances[data.context].settings.action);
+                    }
                 }
                 break;
         }

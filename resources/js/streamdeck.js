@@ -48,6 +48,10 @@ class StreamDeck extends Emitter {
             this.actionInfo = JSON.parse(inActionInfo);
         }
 
+        this.start();
+    }
+    start() {
+
         this.ws = new WebSocket('ws://127.0.0.1:' + this.inPort)
 
         this.ws.onopen = () => {
@@ -64,6 +68,12 @@ class StreamDeck extends Emitter {
             }
 
             this.emit(data.event, data);
+        }
+
+        this.ws.onclose = () => {
+            setTimeout(() => {
+                this.start();
+            }, 2000);
         }
 
     }

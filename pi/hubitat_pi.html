@@ -39,7 +39,17 @@
                 <input type="radio" id="action_off" name="action" value="off">
                 <label for="action_off" class="sdpi-item-label"><span></span>off</label>
             </span>
+            <span class="sdpi-item-child">
+                <input type="radio" id="action_setLevel" name="action" value="setLevel">
+                <label for="action_setLevel" class="sdpi-item-label"><span></span>setLevel</label>
+            </span>
         </div>
+    </div>
+    <div class="sdpi-item action-setLevel" type="radio">
+        <div class="sdpi-item-label">Level (%)</div>
+        <select class="sdpi-item-value" id="level" name="level">
+
+        </select>
     </div>
 
 </div>
@@ -64,10 +74,17 @@
     }
 
     function start() {
+        // populate level
+        for (let i = 1; i <= 100; i++) {
+            $('#level').append($('<option></option>').val(i).html(i));
+
+        }
+
         // StreamDeck connected, subscribe to events
         $sd.subscribe('didReceiveGlobalSettings', receivedGlobalSettings);
         $sd.subscribe('didReceiveSettings', receivedSettings);
         action = $sd.actionInfo.action;
+        $('.action-setLevel').hide();
         if (action === 'com.ripnet.hubitat.setswitch.action') {
             $('.action-set').show();
         } else {
@@ -79,6 +96,9 @@
 
 
     $(function() {
+
+
+
         $('.global').change(function() {
             let id = $(this).attr('id');
             let value = $(this).val();
@@ -96,11 +116,24 @@
         $('input[type="radio"][name="action"]').change(function() {
             let newSettings = Object.assign({}, localSettings);
             newSettings["action"] = $(this).val();
+            if ($(this).val() === 'setLevel') {
+                $('.action-setLevel').show();
+            } else {
+                $('.action-setLevel').hide();
+            }
             setSettings(newSettings);
         });
-
+        $('#level').change(function() {
+            changeLevel($(this).val());
+        });
 
     });
+
+    function changeLevel(value) {
+        let newSettings = Object.assign({}, localSettings);
+        newSettings["level"] = value;
+        setSettings(newSettings);
+    }
 
     function receivedGlobalSettings(data) {
         globalSettings = data.payload['settings'] || {};
@@ -116,6 +149,14 @@
         if (action === 'com.ripnet.hubitat.setswitch.action') {
             if (localSettings.action) {
                 $('input[type="radio"][name="action"][value="'+localSettings.action+'"]').attr('checked', true);
+                if (localSettings.action === 'setLevel') {
+                    $('.action-setLevel').show();
+                } else {
+                    $('.action-setLevel').hide();
+                }
+            }
+            if (localSettings.level) {
+                $('#level').val(localSettings.level);
             }
         }
     }

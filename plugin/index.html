@@ -23,7 +23,9 @@
 
     function start() {
         // StreamDeck connected, subscribe to events
-        $sd.subscribe('keyUp', buttonPress);
+        $sd.subscribe('keyDown', keyDown)
+        //$sd.subscribe('keyUp', buttonPress);
+        $sd.subscribe('keyUp', keyUp);
         $sd.subscribe('willAppear', appear);
         $sd.subscribe('didReceiveGlobalSettings', receivedGlobalSettings);
         $sd.subscribe('didReceiveSettings', receivedSettings);
@@ -44,13 +46,23 @@
 
             hubitatWebsocket.onmessage = function(evt) {
                 const data = JSON.parse(evt.data);
+                const id = data.deviceId;
+                const value = data.value;
                 if (data.name === "switch") {
-                    const id = data.deviceId;
-                    const value = data.value;
+
                     for (const [key, instance] of Object.entries(instances)) {
                         if (instances[key].settings.device == id) {
                             instances[key].state = value;
                             updateState(key);
+                        }
+
+                    }
+                }
+                if (data.name === "level") {
+                    for (const [key, instance] of Object.entries(instances)) {
+                        if (instances[key].settings.device == id) {
+                            instances[key].level = parseInt(value);
+                            updateLevel(key);
                         }
 
                     }
@@ -68,10 +80,20 @@
             ) {
                 const id = instances[context].settings.device;
                 $.get(globalSettings.hostname + "/devices/" + id + "?access_token=" + globalSettings.access_token, function (data) {
+                    let hasLevel = false;
+                    let newState, newLevel;
                     data.attributes.forEach(function (a) {
                         if (a.name === "switch") {
-
+                            newState = a.currentValue;
                             instances[context].state = a.currentValue;
+                        }
+                        if (a.name === "level") {
+                            newLevel = parseInt(a.currentValue);
+                            hasLevel = true;
+                        }
+                        if (hasLevel) {
+                            updateLevel(context);
+                        } else {
                             updateState(context);
                         }
                     });
@@ -94,7 +116,7 @@
                     stateString = state;
                 }
                 $.get(globalSettings.hostname + "/devices/" + id + "/" + stateString + "?access_token=" + globalSettings.access_token, function (data) {
-                    instances[context].state = state;
+                    if (state === 'on' || state === 'off') instances[context].state = state;
                     updateState(context);
                 });
             }
@@ -103,6 +125,8 @@
 
     function updateState(instance) {
         const state = instances[instance].state;
+
+
         switch (state) {
             case "on":
                 $sd.setImageFile(instance, 'light_green');
@@ -115,6 +139,32 @@
             default:
                 $sd.setImageFile(instance, 'light_gray');
         }
+    }
+
+    function updateLevel(instance) {
+        const level = instances[instance].level;
+        const state = instances[instance].state;
+
+        if (state === "on") {
+            if (level < 17) {
+                $sd.setImageFile(instance, 'light_green_1');
+            } else if (level < 34) {
+                $sd.setImageFile(instance, 'light_green_2');
+            } else if (level < 50) {
+                $sd.setImageFile(instance, 'light_green_3');
+            } else if (level < 67) {
+                $sd.setImageFile(instance, 'light_green_4');
+            } else if (level < 84) {
+                $sd.setImageFile(instance, 'light_green_5');
+            } else {
+                $sd.setImageFile(instance, 'light_green');
+            }
+        } else if (state === "off") {
+            $sd.setImageFile(instance, 'light_red');
+        } else {
+            $sd.setImageFile(instance, 'light_gray');
+        }
+
     }
 
     function receivedSettings(data) {
@@ -145,7 +195,7 @@
 
    function appear(data) {
         let settings = data.payload.settings || {};
-        instances[data.context] = {action: data.action, settings: settings, state: 'unknown'};
+        instances[data.context] = {action: data.action, settings: settings, state: 'unknown', level: 0, key: null, key2: null, resolve: () => {}, resolve2: () => {}, wait: null, wait2: null, cba: null};
         if (data.payload.settings.device) {
             hubitat.pollState(data.context);
         } else {
@@ -154,8 +204,7 @@
     }
 
     function buttonPress(data) {
-        instances[data.context]['settings'] = data.payload.settings;
-
+        //instances[data.context]['settings'] = data.payload.settings;
         switch (data.action) {
             case 'com.ripnet.hubitat.toggleswitch.action':
                 const current = instances[data.context].state;
@@ -172,6 +221,9 @@
                         if (level >= 0 && level <= 100) {
                             hubitat.setState(data.context, instances[data.context].settings.action, level);
                         }
+                        if ("subAction" in instances[data.context]['settings'] && instances[data.context].settings.subAction !== 'none') {
+                            hubitat.setState(data.context, instances[data.context].settings.subAction);
+                        }
                     } else {
                         hubitat.setState(data.context, instances[data.context].settings.action);
                     }
@@ -180,6 +232,117 @@
         }
 
 
+    }
+
+
+    function keyUp(data) {
+
+        switch (data.action) {
+            case 'com.ripnet.hubitat.toggleswitch.action':
+            case 'com.ripnet.hubitat.setswitch.action':
+                buttonPress(data);
+                break;
+            case 'com.ripnet.hubitat.multidimmer.action':
+                instances[data.context].resolve(false);
+                instances[data.context].resolve2(false);
+                break;
+        }
+
+    }
+    function keyDown(data) {
+        instances[data.context]['settings'] = data.payload.settings;
+        switch (data.action) {
+            case 'com.ripnet.hubitat.toggleswitch.action':
+            case 'com.ripnet.hubitat.setswitch.action':
+                break;
+            case 'com.ripnet.hubitat.multidimmer.action':
+
+
+                instances[data.context].key = new Promise((resolve) => {
+                    instances[data.context].resolve = resolve;
+                    let x = 0;
+                    instances[data.context].wait = setInterval(() => {
+                        clearInterval(instances[data.context].wait);
+                        resolve(true);
+
+                    }, 200);
+
+                }).then((isTimeout) => {
+                    instances[data.context].key = null;
+                    instances[data.context].resolve = () => {};
+                    clearInterval(instances[data.context].wait);
+                    if (isTimeout) {
+                        multi_held(data);
+
+                    } else {
+                        if (instances[data.context].key2 == null) {
+                            instances[data.context].key2 = new Promise((resolve2) => {
+                                instances[data.context].resolve2 = resolve2;
+                                instances[data.context].wait2 = setInterval(() => {
+                                    clearInterval(instances[data.context].wait2);
+                                    resolve2(true);
+                                }, 100);
+                            }).then((isTimeout2) => {
+                                clearInterval(instances[data.context].wait2);
+                                if (isTimeout2) {
+                                    multi_press(data);
+                                } else {
+                                    // why == key up
+                                    multi_doubleClick(data);
+                                }
+
+                                instances[data.context].key2 = null;
+                                instances[data.context].resolve2 = () => {};
+
+                            });
+                        }
+
+
+
+                    }
+
+                });
+                break;
+        }
+
+    }
+
+    function multi_press(data) {
+        if (instances[data.context].state === "off") {
+            let initialLevel = parseInt(instances[data.context].settings.startingLevel);
+            if (initialLevel > -1) {
+                hubitat.setState(data.context, "setLevel", initialLevel);
+                instances[data.context].level = initialLevel;
+            }
+            hubitat.setState(data.context, "on");
+            instances[data.context].state = "on";
+            updateLevel(data.context);
+        } else {
+
+            let newLevel = instances[data.context].level + 17;
+            if (newLevel > 100) newLevel = 100;
+            hubitat.setState(data.context, "setLevel", String(newLevel));
+            instances[data.context].level = newLevel;
+            updateLevel(data.context);
+        }
+
+    }
+    function multi_doubleClick(data) {
+        let newLevel = instances[data.context].level - 17;
+
+        if (newLevel < 1) {
+            hubitat.setState(data.context, "off");
+            updateLevel(data.context);
+        } else {
+            hubitat.setState(data.context, "setLevel", String(newLevel));
+            instances[data.context].level = newLevel;
+            updateLevel(data.context);
+        }
+
+
+    }
+    function multi_held(data) {
+        hubitat.setState(data.context, "off");
     }
 
 

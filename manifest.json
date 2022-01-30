@@ -29,6 +29,21 @@
       "SupportedInMultiActions": true,
       "Tooltip": "This action sets the state of a switch",
       "UUID": "com.ripnet.hubitat.setswitch.action"
+    },
+    {
+      "Icon": "resources/img/toggle",
+      "Name": "Multi-Action Dimmer",
+      "States": [
+        {
+          "Image": "resources/img/light_gray",
+          "TitleAlignment": "bottom",
+          "FontSize": "12",
+          "Title": "Switch"
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "Tooltip": "This action sets the state of a switch",
+      "UUID": "com.ripnet.hubitat.multidimmer.action"
     }
   ],
   "SDKVersion": 2,
@@ -39,7 +54,7 @@
   "Icon": "resources/img/hubitat_logo",
   "URL": "https://github.com/ripnet/streamdeck-hubitat",
   "PropertyInspectorPath": "pi/hubitat_pi.html",
-  "Version": "1.5",
+  "Version": "1.7",
   "Category": "Hubitat",
   "CategoryIcon": "resources/img/category",
   "OS": [

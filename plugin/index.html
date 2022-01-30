@@ -84,19 +84,20 @@
                     let newState, newLevel;
                     data.attributes.forEach(function (a) {
                         if (a.name === "switch") {
-                            newState = a.currentValue;
+                            //newState = a.currentValue;
                             instances[context].state = a.currentValue;
                         }
                         if (a.name === "level") {
-                            newLevel = parseInt(a.currentValue);
+                            instances[context].level = parseInt(a.currentValue);
                             hasLevel = true;
                         }
-                        if (hasLevel) {
-                            updateLevel(context);
-                        } else {
-                            updateState(context);
-                        }
+
                     });
+                    if (hasLevel) {
+                        updateLevel(context);
+                    } else {
+                        updateState(context);
+                    }
                 }).fail(function() {
                     instances[context].state = 'unknown'
                     updateState(context);

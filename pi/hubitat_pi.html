@@ -168,7 +168,7 @@
         });
         $('#startingLevel').change(function() {
             let newSettings = Object.assign({}, localSettings);
-            newSettings["startingLevel"] = value;
+            newSettings["startingLevel"] = $(this).val();
             setSettings(newSettings);
         });
 
@@ -191,8 +191,10 @@
 
     function receivedSettings(data) {
         localSettings = data.payload.settings || {};
+        console.log(data);
+        console.log(action);
         if (action === 'com.ripnet.hubitat.setswitch.action') {
-            if (localSettings.action) {
+            if ("action" in localSettings) {
                 $('input[type="radio"][name="action"][value="'+localSettings.action+'"]').attr('checked', true);
                 if (localSettings.action === 'setLevel') {
                     $('.action-setLevel').show();
@@ -200,9 +202,12 @@
                     $('.action-setLevel').hide();
                 }
             }
-            if (localSettings.level) {
+            if ("level" in localSettings) {
                 $('#level').val(localSettings.level);
             }
+        }
+        if ("startingLevel" in localSettings) {
+            $('#startingLevel').val(localSettings.startingLevel);
         }
     }
 

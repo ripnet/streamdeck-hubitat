@@ -54,7 +54,7 @@
   "Icon": "resources/img/hubitat_logo",
   "URL": "https://github.com/ripnet/streamdeck-hubitat",
   "PropertyInspectorPath": "pi/hubitat_pi.html",
-  "Version": "1.7",
+  "Version": "1.8",
   "Category": "Hubitat",
   "CategoryIcon": "resources/img/category",
   "OS": [

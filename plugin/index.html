@@ -124,7 +124,6 @@
         const level = instances[instance].level;
         const state = instances[instance].state;
 
-
         switch (state) {
             case "on":
                 $sd.setImageFile(instance, 'bulb_green');
@@ -243,7 +242,6 @@
 
     }
 
-
     function keyUp(data) {
 
         switch (data.action) {
@@ -258,6 +256,7 @@
         }
 
     }
+
     function keyDown(data) {
         instances[data.context]['settings'] = data.payload.settings;
         switch (data.action) {
@@ -336,6 +335,7 @@
         }
 
     }
+
     function multi_doubleClick(data) {
         let newLevel = instances[data.context].level - 17;
 
@@ -350,6 +350,7 @@
 
 
     }
+
     function multi_held(data) {
         hubitat.setState(data.context, "off");
     }

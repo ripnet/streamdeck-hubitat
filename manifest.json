@@ -5,7 +5,7 @@
       "Name": "Toggle Switch",
       "States": [
         {
-          "Image": "resources/img/light_gray",
+          "Image": "resources/img/light_gray.png",
           "TitleAlignment": "bottom",
           "FontSize": "12",
           "Title": "Switch"
@@ -14,6 +14,29 @@
       "SupportedInMultiActions": true,
       "Tooltip": "This action toggles a switch",
       "UUID": "com.ripnet.hubitat.toggleswitch.action"
+    },
+    {
+      "Icon": "resources/img/toggle",
+      "Name": "Dial Switch",
+      "States": [
+        {
+          "Image": "resources/img/bulb_gray.png",
+          "TitleAlignment": "bottom",
+          "FontSize": "12",
+          "Title": "Switch"
+        }
+      ],
+      "Controllers": [ "Encoder" ],
+      "Encoder": {
+        "layout": "dialLayout.json",
+        "TriggerDescription": {
+          "Rotate": "Increase/Decrease Level",
+          "Push": "Toggle On/Off"
+        }
+      },
+      "SupportedInMultiActions": true,
+      "Tooltip": "This action controls a switch with a dial",
+      "UUID": "com.ripnet.hubitat.dialswitch.action"
     },
     {
       "Icon": "resources/img/toggle",

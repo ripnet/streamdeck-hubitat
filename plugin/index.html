@@ -23,19 +23,15 @@
 
     function start() {
         // StreamDeck connected, subscribe to events
+        $sd.subscribe('dialRotate', dialRotate)
+        $sd.subscribe('dialPress', dialPress)
         $sd.subscribe('keyDown', keyDown)
-        //$sd.subscribe('keyUp', buttonPress);
         $sd.subscribe('keyUp', keyUp);
         $sd.subscribe('willAppear', appear);
         $sd.subscribe('didReceiveGlobalSettings', receivedGlobalSettings);
         $sd.subscribe('didReceiveSettings', receivedSettings);
         $sd.sendEvents(); // ready!
     }
-
-
-
-
-
 
     const hubitat = {
         start: function() {
@@ -125,20 +121,35 @@
     }
 
     function updateState(instance) {
+        const level = instances[instance].level;
         const state = instances[instance].state;
-
 
         switch (state) {
             case "on":
-                $sd.setImageFile(instance, 'light_green');
+                $sd.setImageFile(instance, 'bulb_green');
+                $sd.setFeedback(instance, {
+                "icon": "./resources/img/bulb_green.png",
+                "value": level.toString(),
+                "indicator": { "value": level, "enabled": true }
+            })                
                 break;
             case "off":
-                $sd.setImageFile(instance, 'light_red');
+                $sd.setImageFile(instance, 'bulb_red');
+                $sd.setFeedback(instance, {
+                "icon": "./resources/img/bulb_red.png",
+                "value": "0",
+                "indicator": { "value": 0, "enabled": false }
+            })
                 break;
             case "setLevel":
                 break;
             default:
-                $sd.setImageFile(instance, 'light_gray');
+                $sd.setImageFile(instance, 'bulb_gray');
+                $sd.setFeedback(instance, {
+                "icon": "./resources/img/bulb_gray.png",
+                "value": "0",
+                "indicator": { "value": 0, "enabled": false }
+            })
         }
     }
 
@@ -147,23 +158,19 @@
         const state = instances[instance].state;
 
         if (state === "on") {
-            if (level < 17) {
-                $sd.setImageFile(instance, 'light_green_1');
-            } else if (level < 34) {
-                $sd.setImageFile(instance, 'light_green_2');
-            } else if (level < 50) {
-                $sd.setImageFile(instance, 'light_green_3');
-            } else if (level < 67) {
-                $sd.setImageFile(instance, 'light_green_4');
-            } else if (level < 84) {
-                $sd.setImageFile(instance, 'light_green_5');
-            } else {
-                $sd.setImageFile(instance, 'light_green');
-            }
+
+            $sd.setFeedback(instance, {
+                "icon": "./resources/img/bulb_green.png",
+                "value": level.toString(),
+                "indicator": { "value": level, "enabled": true }
+            })
+
+            $sd.setImageFile(instance, 'bulb_green');
+
         } else if (state === "off") {
-            $sd.setImageFile(instance, 'light_red');
+            $sd.setImageFile(instance, 'bulb_red');
         } else {
-            $sd.setImageFile(instance, 'light_gray');
+            $sd.setImageFile(instance, 'bulb_gray');
         }
 
     }
@@ -235,7 +242,6 @@
 
     }
 
-
     function keyUp(data) {
 
         switch (data.action) {
@@ -250,6 +256,7 @@
         }
 
     }
+
     function keyDown(data) {
         instances[data.context]['settings'] = data.payload.settings;
         switch (data.action) {
@@ -328,6 +335,7 @@
         }
 
     }
+
     function multi_doubleClick(data) {
         let newLevel = instances[data.context].level - 17;
 
@@ -342,10 +350,39 @@
 
 
     }
+
     function multi_held(data) {
         hubitat.setState(data.context, "off");
     }
 
+    function dialRotate(data) {
+        let adjustment = data.payload.ticks * 2 //adjust multiplier for knob sensitivity.
+        let newLevel = instances[data.context].level + adjustment;
+
+        if (newLevel < 1) {
+            hubitat.setState(data.context, "off");
+            updateLevel(data.context);
+        } else {
+            hubitat.setState(data.context, "setLevel", String(newLevel));
+            instances[data.context].level = newLevel;
+            updateLevel(data.context);
+        }
+
+    }
+
+    function dialPress(data) {
+
+        if (!data.payload.pressed) {
+            return;
+        }
+
+        if (instances[data.context].state === "off") {
+            hubitat.setState(data.context, "on");
+        } else {
+            hubitat.setState(data.context, "off");
+        }
+
+    }
 
 </script>
 </body>

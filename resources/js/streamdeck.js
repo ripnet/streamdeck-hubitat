@@ -135,6 +135,11 @@ class StreamDeck extends Emitter {
         this.sendMessage({'event': 'setSettings', 'context': context, 'payload': settings});
     }
 
+    setFeedback(context, feedback) {
+        console.log(feedback)
+        this.sendMessage({'event': 'setFeedback', 'context': context, 'payload': feedback});
+    }
+
     ready = false;
 }
 let $sd = {ready: false};

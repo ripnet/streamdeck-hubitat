@@ -5,7 +5,7 @@
       "Name": "Toggle Switch",
       "States": [
         {
-          "Image": "resources/img/light_gray",
+          "Image": "resources/img/light_gray.png",
           "TitleAlignment": "bottom",
           "FontSize": "12",
           "Title": "Switch"
@@ -20,7 +20,7 @@
       "Name": "Dial Switch",
       "States": [
         {
-          "Image": "resources/img/light_gray",
+          "Image": "resources/img/bulb_gray.png",
           "TitleAlignment": "bottom",
           "FontSize": "12",
           "Title": "Switch"

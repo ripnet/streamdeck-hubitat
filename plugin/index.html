@@ -33,11 +33,6 @@
         $sd.sendEvents(); // ready!
     }
 
-
-
-
-
-
     const hubitat = {
         start: function() {
             let url = new URL(globalSettings.hostname)
@@ -132,17 +127,17 @@
 
         switch (state) {
             case "on":
-                $sd.setImageFile(instance, 'light_green');
+                $sd.setImageFile(instance, 'bulb_green');
                 $sd.setFeedback(instance, {
-                "icon": "./resources/img/light_green.png",
+                "icon": "./resources/img/bulb_green.png",
                 "value": level.toString(),
                 "indicator": { "value": level, "enabled": true }
             })                
                 break;
             case "off":
-                $sd.setImageFile(instance, 'light_red');
+                $sd.setImageFile(instance, 'bulb_red');
                 $sd.setFeedback(instance, {
-                "icon": "./resources/img/light_red.png",
+                "icon": "./resources/img/bulb_red.png",
                 "value": "0",
                 "indicator": { "value": 0, "enabled": false }
             })
@@ -150,9 +145,9 @@
             case "setLevel":
                 break;
             default:
-                $sd.setImageFile(instance, 'light_gray');
+                $sd.setImageFile(instance, 'bulb_gray');
                 $sd.setFeedback(instance, {
-                "icon": "./resources/img/light_gray.png",
+                "icon": "./resources/img/bulb_gray.png",
                 "value": "0",
                 "indicator": { "value": 0, "enabled": false }
             })
@@ -166,27 +161,17 @@
         if (state === "on") {
 
             $sd.setFeedback(instance, {
+                "icon": "./resources/img/bulb_green.png",
                 "value": level.toString(),
                 "indicator": { "value": level, "enabled": true }
             })
 
-            if (level < 17) {
-                $sd.setImageFile(instance, 'light_green_1');
-            } else if (level < 34) {
-                $sd.setImageFile(instance, 'light_green_2');
-            } else if (level < 50) {
-                $sd.setImageFile(instance, 'light_green_3');
-            } else if (level < 67) {
-                $sd.setImageFile(instance, 'light_green_4');
-            } else if (level < 84) {
-                $sd.setImageFile(instance, 'light_green_5');
-            } else {
-                $sd.setImageFile(instance, 'light_green');
-            }
+            $sd.setImageFile(instance, 'bulb_green');
+
         } else if (state === "off") {
-            $sd.setImageFile(instance, 'light_red');
+            $sd.setImageFile(instance, 'bulb_red');
         } else {
-            $sd.setImageFile(instance, 'light_gray');
+            $sd.setImageFile(instance, 'bulb_gray');
         }
 
     }
